@@ -1,0 +1,31 @@
+{% extends 'generic/object.html' %}
+{% load helpers %}
+{% block content %}
+<div class="row">
+  <div class="col col-md-6">
+    <div class="card">
+      <h2 class="card-header">Volume (zvol)</h2>
+      <table class="table table-hover attr-table">
+        <tr><th scope="row">Name</th><td>{{ object.name }}</td></tr>
+        <tr><th scope="row">Pool</th><td>{{ object.pool|linkify }}</td></tr>
+        <tr><th scope="row">Parent</th><td>{{ object.parent|linkify|placeholder }}</td></tr>
+        <tr><th scope="row">volsize</th><td>{{ object.volsize }}</td></tr>
+        <tr><th scope="row">volblocksize</th><td>{{ object.volblocksize|placeholder }}</td></tr>
+      </table>
+    </div>
+    <div class="card">
+      <h2 class="card-header">Properties</h2>
+      <table class="table table-hover attr-table">
+        <tr><th scope="row">compression</th><td>{{ object.get_compression_display|placeholder }}</td></tr>
+        <tr><th scope="row">dedup</th><td>{{ object.get_dedup_display|placeholder }}</td></tr>
+        <tr><th scope="row">encryption</th><td>{{ object.get_encryption_display|placeholder }}</td></tr>
+        <tr><th scope="row">encryptionroot</th><td>{{ object.encryptionroot|placeholder }}</td></tr>
+      </table>
+    </div>
+  </div>
+  <div class="col col-md-6">
+    {% include 'inc/panels/tags.html' %}
+    {% include 'inc/panels/custom_fields.html' %}
+  </div>
+</div>
+{% endblock %}

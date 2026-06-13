@@ -1,0 +1,22 @@
+{% extends 'generic/object.html' %}
+{% load helpers %}
+{% block content %}
+<div class="row">
+  <div class="col col-md-6">
+    <div class="card">
+      <h2 class="card-header">Vdev Member</h2>
+      <table class="table table-hover attr-table">
+        <tr><th scope="row">Vdev</th><td>{{ object.vdev|linkify }}</td></tr>
+        <tr><th scope="row">Pool</th><td>{{ object.vdev.pool|linkify }}</td></tr>
+        <tr><th scope="row">Partition</th><td>{{ object.partition|linkify }}</td></tr>
+        <tr><th scope="row">Device link</th><td>{{ object.get_device_link_type_display }}</td></tr>
+        <tr><th scope="row">Whole disk</th><td>{% checkmark object.whole_disk %}</td></tr>
+      </table>
+    </div>
+  </div>
+  <div class="col col-md-6">
+    {% include 'inc/panels/tags.html' %}
+    {% include 'inc/panels/custom_fields.html' %}
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,32 @@
+{% extends 'generic/object.html' %}
+{% load helpers %}
+{% block content %}
+<div class="row">
+  <div class="col col-md-6">
+    <div class="card">
+      <h2 class="card-header">Vdev</h2>
+      <table class="table table-hover attr-table">
+        <tr><th scope="row">Pool</th><td>{{ object.pool|linkify }}</td></tr>
+        <tr><th scope="row">Class</th><td>{% badge object.get_vdev_class_display bg_color=object.get_vdev_class_color %}</td></tr>
+        <tr><th scope="row">Redundancy</th><td>{{ object.get_redundancy_display }}</td></tr>
+        <tr><th scope="row">Index</th><td>{{ object.index }}</td></tr>
+        <tr><th scope="row">dRAID config</th><td>{% if object.draid_config %}<pre class="mb-0">{{ object.draid_config|pprint }}</pre>{% else %}{{ ''|placeholder }}{% endif %}</td></tr>
+      </table>
+    </div>
+  </div>
+  <div class="col col-md-6">
+    <div class="card">
+      <h2 class="card-header">Members</h2>
+      <table class="table table-hover attr-table">
+        {% for member in object.members.all %}
+        <tr><td>{{ member.partition|linkify }}</td><td>{{ member.get_device_link_type_display }}</td></tr>
+        {% empty %}
+        <tr><td colspan="2" class="text-muted">No members</td></tr>
+        {% endfor %}
+      </table>
+    </div>
+    {% include 'inc/panels/tags.html' %}
+    {% include 'inc/panels/custom_fields.html' %}
+  </div>
+</div>
+{% endblock %}
