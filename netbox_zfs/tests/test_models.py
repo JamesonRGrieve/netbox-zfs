@@ -1,7 +1,8 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 """Model tests against a real DB (no mocks): pool GUID NULL semantics, vdev uniqueness, the
-cross-plugin partition OneToOne + PROTECT, the dual-partition (live + spare) drive, mirrored SLOG,
-dataset hierarchy cascade, and required-volsize zvols."""
+cross-plugin partition FK + PROTECT, shared-spare (one partition across vdevs) + per-vdev
+uniqueness, the dual-partition (live + spare) drive, mirrored SLOG, dataset hierarchy cascade,
+and required-volsize zvols."""
 from dcim.models import Manufacturer
 from django.db import transaction
 from django.db.models import ProtectedError
@@ -87,12 +88,23 @@ class ZFSVdevMemberModelTest(TestCase):
         self.assertIn("/plugins/zfs/vdev-members/", m.get_absolute_url())
         self.assertEqual(m.partition, part)
 
-    def test_partition_one_to_one(self):
+    def test_shared_spare_partition_across_vdevs(self):
+        """A hot-spare partition shared across pools: the same partition backs members in several
+        spare vdevs. Allowed (FK, not OneToOne)."""
         part = self._part(_disk(self.iit, "M-2"), 1, 2048, 4095)
+        pool_b = ZFSPool.objects.create(name="tank-b")
+        spare_a = ZFSVdev.objects.create(pool=self.pool, vdev_class=VdevClassChoices.SPARE, index=0)
+        spare_b = ZFSVdev.objects.create(pool=pool_b, vdev_class=VdevClassChoices.SPARE, index=0)
+        m_a = ZFSVdevMember.objects.create(vdev=spare_a, partition=part)
+        m_b = ZFSVdevMember.objects.create(vdev=spare_b, partition=part)
+        self.assertEqual(m_a.partition, m_b.partition)
+        self.assertEqual(part.zfs_members.count(), 2)
+
+    def test_partition_unique_within_vdev(self):
+        part = self._part(_disk(self.iit, "M-2b"), 1, 2048, 4095)
         ZFSVdevMember.objects.create(vdev=self.vdev, partition=part)
-        other = ZFSVdev.objects.create(pool=self.pool, vdev_class=VdevClassChoices.DATA, index=1)
         with self.assertRaises(IntegrityError), transaction.atomic():
-            ZFSVdevMember.objects.create(vdev=other, partition=part)
+            ZFSVdevMember.objects.create(vdev=self.vdev, partition=part)
 
     def test_partition_protect(self):
         part = self._part(_disk(self.iit, "M-3"), 1, 2048, 4095)

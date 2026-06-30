@@ -48,7 +48,9 @@ so it **depends on `netbox-fs`** (which depends on `netbox-inventory`). Install/
 - `ZFSPool.pool_guid` is `unique`, nullable (blank → NULL via `save()`); it is the stable identity.
   `host` is `SET_NULL`/nullable (pools export/import between hosts).
 - `ZFSVdev` splits `vdev_class` from `redundancy` (mirrored SLOG, dRAID). `(pool, class, index)` unique.
-- `ZFSVdevMember.partition` is a `OneToOneField` to `netbox_fs.Partition`, `on_delete=PROTECT`.
+- `ZFSVdevMember.partition` is a `ForeignKey` to `netbox_fs.Partition`, `on_delete=PROTECT`, uniqued
+  per `(vdev, partition)`. A partition may back members in several vdevs (a hot spare shared across
+  pools is the same partition in each pool's spare vdev); it may not appear twice in one vdev.
 - `ZFSDataset` is hierarchical (`parent`, CASCADE). `ZFSVolume.volsize` is required; zvols are leaves.
 
 ---

@@ -121,14 +121,17 @@ class ZFSVdev(NetBoxModel):
 
 
 class ZFSVdevMember(NetBoxModel):
-    """A member of a vdev: a 1:1 reference to a netbox-fs partition. A drive's live partition and
-    its hot-spare partition are two separate members in two different (class) vdevs."""
+    """A member of a vdev: a reference to a netbox-fs partition. A partition may back members in
+    more than one vdev — a hot-spare disk shared across several pools is the same partition listed
+    in each pool's spare vdev — so this is a FK, uniqued per ``(vdev, partition)`` to forbid listing
+    the same partition twice in one vdev. A drive's live partition and its hot-spare partition are
+    still two separate members in two different (class) vdevs."""
 
     vdev = models.ForeignKey(ZFSVdev, on_delete=models.CASCADE, related_name="members")
-    partition = models.OneToOneField(
+    partition = models.ForeignKey(
         "netbox_fs.Partition",
         on_delete=models.PROTECT,
-        related_name="zfs_member",
+        related_name="zfs_members",
         help_text="The partition backing this member (PROTECTed — can't be deleted while in use).",
     )
     device_link_type = models.CharField(
@@ -141,6 +144,9 @@ class ZFSVdevMember(NetBoxModel):
     class Meta:
         ordering = ["vdev", "partition"]
         verbose_name = "ZFS Vdev Member"
+        constraints = [
+            models.UniqueConstraint(fields=["vdev", "partition"], name="netbox_zfs_vdevmember_unique")
+        ]
 
     def __str__(self):
         return f"{self.vdev} ← {self.partition}"
