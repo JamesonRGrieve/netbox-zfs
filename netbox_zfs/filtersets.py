@@ -67,10 +67,17 @@ class ZFSDatasetFilterSet(NetBoxModelFilterSet):
 
     class Meta:
         model = ZFSDataset
-        fields = ["id", "name", "compression", "mountpoint", "encryption"]
+        fields = [
+            "id", "name", "recordsize", "compression", "checksum", "copies", "atime", "relatime",
+            "dedup", "sync", "logbias", "redundant_metadata", "dnodesize", "volmode", "readonly",
+            "canmount", "mountpoint", "snapdir", "xattr", "acltype", "casesensitivity",
+            "encryption",
+        ]
 
     def search(self, queryset, name, value):
-        return queryset.filter(Q(name__icontains=value) | Q(mountpoint__icontains=value))
+        return queryset.filter(
+            Q(name__icontains=value) | Q(mountpoint__icontains=value) | Q(sharenfs__icontains=value)
+        )
 
 
 class ZFSVolumeFilterSet(NetBoxModelFilterSet):
@@ -83,7 +90,11 @@ class ZFSVolumeFilterSet(NetBoxModelFilterSet):
 
     class Meta:
         model = ZFSVolume
-        fields = ["id", "name", "volsize", "volblocksize", "compression"]
+        fields = [
+            "id", "name", "volsize", "volblocksize", "volmode", "snapdev", "compression",
+            "checksum", "copies", "dedup", "sync", "logbias", "redundant_metadata", "readonly",
+            "encryption",
+        ]
 
     def search(self, queryset, name, value):
         return queryset.filter(Q(name__icontains=value))

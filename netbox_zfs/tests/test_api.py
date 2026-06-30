@@ -101,7 +101,12 @@ class ZFSDatasetAPITest(_CRUD):
         cls.create_data = [
             {"pool": pool.pk, "name": "tank/d"},
             {"pool": pool.pk, "name": "tank/e", "compression": "zstd", "recordsize": "16K"},
-            {"pool": pool.pk, "name": "tank/f", "mountpoint": "/tank/f"},
+            {
+                "pool": pool.pk, "name": "tank/f", "mountpoint": "/tank/f", "checksum": "blake3",
+                "copies": 2, "sync": "disabled", "xattr": "sa", "acltype": "posix",
+                "sharenfs": "rw=192.168.5.130/31", "special_small_blocks": "32K",
+                "pbkdf2iters": 350000,
+            },
         ]
 
 
@@ -121,5 +126,9 @@ class ZFSVolumeAPITest(_CRUD):
         cls.create_data = [
             {"pool": pool.pk, "name": "tank/v4", "volsize": "5G"},
             {"pool": pool.pk, "name": "tank/v5", "volsize": "6G", "volblocksize": "16K"},
-            {"pool": pool.pk, "name": "tank/v6", "volsize": "7G", "compression": "lz4"},
+            {
+                "pool": pool.pk, "name": "tank/v6", "volsize": "7G", "compression": "lz4",
+                "volmode": "dev", "snapdev": "visible", "checksum": "sha256", "copies": 3,
+                "sync": "always", "refreservation": "7G",
+            },
         ]

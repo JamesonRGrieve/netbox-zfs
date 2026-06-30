@@ -5,10 +5,28 @@ from django.db import models
 from django.urls import reverse
 from netbox.models import NetBoxModel
 from .choices import (
-    DeviceLinkTypeChoices, VdevClassChoices, VdevRedundancyChoices, ZFSCanmountChoices,
-    ZFSCompressionChoices, ZFSDedupChoices, ZFSEncryptionChoices, ZFSKeyformatChoices,
-    ZFSOnOffChoices,
+    DeviceLinkTypeChoices, VdevClassChoices, VdevRedundancyChoices, ZFSAclInheritChoices,
+    ZFSAclModeChoices, ZFSAclTypeChoices, ZFSCacheChoices, ZFSCanmountChoices,
+    ZFSCasesensitivityChoices, ZFSChecksumChoices, ZFSCompressionChoices, ZFSDedupChoices,
+    ZFSDnodeSizeChoices, ZFSEncryptionChoices, ZFSKeyformatChoices, ZFSLogbiasChoices,
+    ZFSNormalizationChoices, ZFSOnOffChoices, ZFSRedundantMetadataChoices, ZFSSnapdirChoices,
+    ZFSSyncChoices, ZFSVolModeChoices, ZFSXattrChoices,
 )
+
+# ZFS properties that inherit down the dataset hierarchy: a child whose field is
+# NULL/blank takes the nearest ancestor's locally-set value (and a wholly-unset
+# chain means the ZFS built-in default applies). Non-inheritable properties
+# (quota, reservation, canmount, the create-time-immutables, encryption key
+# material, mountpoint — whose path is rewritten per child) resolve to the local
+# value only. Used by ``ZFSDataset.effective()``.
+INHERITABLE_PROPERTIES = frozenset({
+    "atime", "relatime", "checksum", "compression", "copies", "dedup", "devices", "exec",
+    "logbias", "nbmand", "primarycache", "secondarycache", "readonly", "recordsize",
+    "redundant_metadata", "setuid", "sharenfs", "sharesmb", "snapdir", "sync", "xattr",
+    "acltype", "aclinherit", "aclmode", "dnodesize", "special_small_blocks", "vscan",
+    "volmode", "context", "fscontext", "defcontext", "rootcontext", "mlslabel",
+    "snapshot_limit", "filesystem_limit",
+})
 
 
 class ZFSPool(NetBoxModel):
@@ -152,8 +170,58 @@ class ZFSDataset(NetBoxModel):
     encryptionroot = models.CharField(max_length=255, blank=True)
     keyformat = models.CharField(max_length=16, choices=ZFSKeyformatChoices, blank=True)
     keylocation = models.CharField(max_length=255, blank=True)
+    pbkdf2iters = models.PositiveIntegerField(
+        null=True, blank=True, help_text="Passphrase PBKDF2 iteration count (encryption)."
+    )
+    # --- inheritable behaviour toggles (blank/NULL => inherited or default) ---
+    relatime = models.CharField(max_length=3, choices=ZFSOnOffChoices, blank=True)
+    exec = models.CharField(max_length=3, choices=ZFSOnOffChoices, blank=True)
+    setuid = models.CharField(max_length=3, choices=ZFSOnOffChoices, blank=True)
+    devices = models.CharField(max_length=3, choices=ZFSOnOffChoices, blank=True)
+    readonly = models.CharField(max_length=3, choices=ZFSOnOffChoices, blank=True)
+    nbmand = models.CharField(max_length=3, choices=ZFSOnOffChoices, blank=True)
+    vscan = models.CharField(max_length=3, choices=ZFSOnOffChoices, blank=True)
+    overlay = models.CharField(max_length=3, choices=ZFSOnOffChoices, blank=True)
+    zoned = models.CharField(max_length=3, choices=ZFSOnOffChoices, blank=True)
+    # --- enumerated tunables ---
+    checksum = models.CharField(max_length=10, choices=ZFSChecksumChoices, blank=True)
+    xattr = models.CharField(max_length=3, choices=ZFSXattrChoices, blank=True)
+    acltype = models.CharField(max_length=6, choices=ZFSAclTypeChoices, blank=True)
+    aclinherit = models.CharField(max_length=14, choices=ZFSAclInheritChoices, blank=True)
+    aclmode = models.CharField(max_length=11, choices=ZFSAclModeChoices, blank=True)
+    sync = models.CharField(max_length=8, choices=ZFSSyncChoices, blank=True)
+    logbias = models.CharField(max_length=10, choices=ZFSLogbiasChoices, blank=True)
+    snapdir = models.CharField(max_length=7, choices=ZFSSnapdirChoices, blank=True)
+    primarycache = models.CharField(max_length=8, choices=ZFSCacheChoices, blank=True)
+    secondarycache = models.CharField(max_length=8, choices=ZFSCacheChoices, blank=True)
+    redundant_metadata = models.CharField(max_length=4, choices=ZFSRedundantMetadataChoices, blank=True)
+    dnodesize = models.CharField(max_length=6, choices=ZFSDnodeSizeChoices, blank=True)
+    volmode = models.CharField(max_length=7, choices=ZFSVolModeChoices, blank=True)
+    copies = models.PositiveSmallIntegerField(
+        null=True, blank=True, choices=[(1, "1"), (2, "2"), (3, "3")]
+    )
+    # --- create-time immutables (not inherited) ---
+    casesensitivity = models.CharField(max_length=11, choices=ZFSCasesensitivityChoices, blank=True)
+    normalization = models.CharField(max_length=6, choices=ZFSNormalizationChoices, blank=True)
+    utf8only = models.CharField(max_length=3, choices=ZFSOnOffChoices, blank=True)
+    version = models.CharField(max_length=8, blank=True, help_text="On-disk filesystem version.")
+    # --- sharing ---
+    sharenfs = models.CharField(max_length=512, blank=True, help_text="NFS export ACL (or on/off).")
+    sharesmb = models.CharField(max_length=512, blank=True, help_text="SMB share (or on/off).")
+    # --- space limits (not inherited) ---
+    refreservation = models.CharField(max_length=32, blank=True)
+    snapshot_limit = models.CharField(max_length=16, blank=True)
+    filesystem_limit = models.CharField(max_length=16, blank=True)
+    special_small_blocks = models.CharField(max_length=16, blank=True)
+    # --- SELinux contexts / MAC label ---
+    mlslabel = models.CharField(max_length=255, blank=True)
+    context = models.CharField(max_length=255, blank=True)
+    fscontext = models.CharField(max_length=255, blank=True)
+    defcontext = models.CharField(max_length=255, blank=True)
+    rootcontext = models.CharField(max_length=255, blank=True)
     advanced = models.JSONField(
-        default=dict, blank=True, help_text="Lossless catch-all for other ZFS properties."
+        default=dict, blank=True,
+        help_text="Forward-compat catch-all for ZFS properties not yet modelled as fields.",
     )
 
     class Meta:
@@ -170,6 +238,26 @@ class ZFSDataset(NetBoxModel):
 
     def get_absolute_url(self):
         return reverse("plugins:netbox_zfs:zfsdataset", args=[self.pk])
+
+    def effective(self, prop):
+        """Resolve a property's effective value the way ZFS does — at runtime, from the
+        dataset hierarchy. A locally-set (non-blank/non-NULL) value wins; otherwise, for
+        an inheritable property, walk ``parent`` to the nearest ancestor that sets it.
+        Returns ``None`` when nothing is set up the chain, i.e. the ZFS built-in default
+        applies. Non-inheritable properties return only this dataset's local value."""
+        local = getattr(self, prop, None)
+        if local not in (None, ""):
+            return local
+        if prop not in INHERITABLE_PROPERTIES:
+            return None
+        node, seen = self.parent, {self.pk}
+        while node is not None and node.pk not in seen:
+            seen.add(node.pk)
+            val = getattr(node, prop, None)
+            if val not in (None, ""):
+                return val
+            node = node.parent
+        return None
 
 
 class ZFSVolume(NetBoxModel):
@@ -193,11 +281,39 @@ class ZFSVolume(NetBoxModel):
     volblocksize = models.CharField(
         max_length=16, blank=True, help_text="Block size set at creation, e.g. 8K, 16K."
     )
+    volmode = models.CharField(max_length=7, choices=ZFSVolModeChoices, blank=True)
+    snapdev = models.CharField(
+        max_length=7, choices=ZFSSnapdirChoices, blank=True,
+        help_text="Visibility of zvol snapshot device nodes (hidden/visible).",
+    )
     compression = models.CharField(max_length=16, choices=ZFSCompressionChoices, blank=True)
     dedup = models.CharField(max_length=8, choices=ZFSDedupChoices, blank=True)
+    checksum = models.CharField(max_length=10, choices=ZFSChecksumChoices, blank=True)
+    copies = models.PositiveSmallIntegerField(
+        null=True, blank=True, choices=[(1, "1"), (2, "2"), (3, "3")]
+    )
+    readonly = models.CharField(max_length=3, choices=ZFSOnOffChoices, blank=True)
+    sync = models.CharField(max_length=8, choices=ZFSSyncChoices, blank=True)
+    logbias = models.CharField(max_length=10, choices=ZFSLogbiasChoices, blank=True)
+    primarycache = models.CharField(max_length=8, choices=ZFSCacheChoices, blank=True)
+    secondarycache = models.CharField(max_length=8, choices=ZFSCacheChoices, blank=True)
+    redundant_metadata = models.CharField(max_length=4, choices=ZFSRedundantMetadataChoices, blank=True)
+    reservation = models.CharField(max_length=32, blank=True)
+    refreservation = models.CharField(max_length=32, blank=True)
     encryption = models.CharField(max_length=16, choices=ZFSEncryptionChoices, blank=True)
     encryptionroot = models.CharField(max_length=255, blank=True)
-    advanced = models.JSONField(default=dict, blank=True)
+    keyformat = models.CharField(max_length=16, choices=ZFSKeyformatChoices, blank=True)
+    keylocation = models.CharField(max_length=255, blank=True)
+    pbkdf2iters = models.PositiveIntegerField(null=True, blank=True)
+    mlslabel = models.CharField(max_length=255, blank=True)
+    context = models.CharField(max_length=255, blank=True)
+    fscontext = models.CharField(max_length=255, blank=True)
+    defcontext = models.CharField(max_length=255, blank=True)
+    rootcontext = models.CharField(max_length=255, blank=True)
+    advanced = models.JSONField(
+        default=dict, blank=True,
+        help_text="Forward-compat catch-all for ZFS properties not yet modelled as fields.",
+    )
 
     class Meta:
         ordering = ["pool", "name"]

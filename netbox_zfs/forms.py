@@ -51,18 +51,44 @@ class ZFSDatasetForm(NetBoxModelForm):
 
     fieldsets = (
         FieldSet("pool", "parent", "name", name="Dataset"),
-        FieldSet("recordsize", "compression", "atime", "dedup", "canmount", "mountpoint", name="Properties"),
-        FieldSet("quota", "refquota", "reservation", name="Space"),
-        FieldSet("encryption", "encryptionroot", "keyformat", "keylocation", name="Encryption"),
+        FieldSet(
+            "recordsize", "compression", "checksum", "copies", "dedup", "sync", "logbias",
+            "redundant_metadata", "dnodesize", "primarycache", "secondarycache", "volmode",
+            name="Storage",
+        ),
+        FieldSet(
+            "atime", "relatime", "exec", "setuid", "devices", "readonly", "canmount", "mountpoint",
+            "snapdir", "overlay", "nbmand", "vscan", "zoned", name="Behaviour",
+        ),
+        FieldSet("xattr", "acltype", "aclinherit", "aclmode", name="ACL / xattr"),
+        FieldSet(
+            "casesensitivity", "normalization", "utf8only", "version", name="Create-time (immutable)",
+        ),
+        FieldSet(
+            "quota", "refquota", "reservation", "refreservation", "snapshot_limit",
+            "filesystem_limit", "special_small_blocks", name="Space",
+        ),
+        FieldSet("sharenfs", "sharesmb", name="Sharing"),
+        FieldSet(
+            "encryption", "encryptionroot", "keyformat", "keylocation", "pbkdf2iters",
+            name="Encryption",
+        ),
+        FieldSet("mlslabel", "context", "fscontext", "defcontext", "rootcontext", name="SELinux"),
         FieldSet("advanced", name="Advanced"),
     )
 
     class Meta:
         model = ZFSDataset
         fields = [
-            "pool", "parent", "name", "recordsize", "compression", "atime", "dedup", "quota",
-            "refquota", "reservation", "mountpoint", "canmount", "encryption", "encryptionroot",
-            "keyformat", "keylocation", "advanced", "tags",
+            "pool", "parent", "name", "recordsize", "compression", "checksum", "copies", "dedup",
+            "sync", "logbias", "redundant_metadata", "dnodesize", "primarycache", "secondarycache",
+            "volmode", "atime", "relatime", "exec", "setuid", "devices", "readonly", "canmount",
+            "mountpoint", "snapdir", "overlay", "nbmand", "vscan", "zoned", "xattr", "acltype",
+            "aclinherit", "aclmode", "casesensitivity", "normalization", "utf8only", "version",
+            "quota", "refquota", "reservation", "refreservation", "snapshot_limit",
+            "filesystem_limit", "special_small_blocks", "sharenfs", "sharesmb", "encryption",
+            "encryptionroot", "keyformat", "keylocation", "pbkdf2iters", "mlslabel", "context",
+            "fscontext", "defcontext", "rootcontext", "advanced", "tags",
         ]
 
 
@@ -71,15 +97,28 @@ class ZFSVolumeForm(NetBoxModelForm):
     parent = DynamicModelChoiceField(queryset=ZFSDataset.objects.all(), required=False)
 
     fieldsets = (
-        FieldSet("pool", "parent", "name", "volsize", "volblocksize", name="Volume"),
-        FieldSet("compression", "dedup", "encryption", "encryptionroot", "advanced", name="Properties"),
+        FieldSet("pool", "parent", "name", "volsize", "volblocksize", "volmode", "snapdev", name="Volume"),
+        FieldSet(
+            "compression", "checksum", "copies", "dedup", "sync", "logbias", "redundant_metadata",
+            "primarycache", "secondarycache", "readonly", name="Storage",
+        ),
+        FieldSet("reservation", "refreservation", name="Space"),
+        FieldSet(
+            "encryption", "encryptionroot", "keyformat", "keylocation", "pbkdf2iters",
+            name="Encryption",
+        ),
+        FieldSet("mlslabel", "context", "fscontext", "defcontext", "rootcontext", name="SELinux"),
+        FieldSet("advanced", name="Advanced"),
     )
 
     class Meta:
         model = ZFSVolume
         fields = [
-            "pool", "parent", "name", "volsize", "volblocksize", "compression", "dedup",
-            "encryption", "encryptionroot", "advanced", "tags",
+            "pool", "parent", "name", "volsize", "volblocksize", "volmode", "snapdev",
+            "compression", "checksum", "copies", "dedup", "sync", "logbias", "redundant_metadata",
+            "primarycache", "secondarycache", "readonly", "reservation", "refreservation",
+            "encryption", "encryptionroot", "keyformat", "keylocation", "pbkdf2iters", "mlslabel",
+            "context", "fscontext", "defcontext", "rootcontext", "advanced", "tags",
         ]
 
 

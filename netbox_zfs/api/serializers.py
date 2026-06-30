@@ -56,9 +56,15 @@ class ZFSDatasetSerializer(NetBoxModelSerializer):
         model = ZFSDataset
         fields = [
             "id", "url", "display", "pool", "parent", "name", "recordsize", "compression",
-            "atime", "dedup", "quota", "refquota", "reservation", "mountpoint", "canmount",
-            "encryption", "encryptionroot", "keyformat", "keylocation", "advanced",
-            "tags", "custom_fields", "created", "last_updated",
+            "atime", "relatime", "dedup", "quota", "refquota", "reservation", "refreservation",
+            "mountpoint", "canmount", "exec", "setuid", "devices", "readonly", "nbmand", "vscan",
+            "overlay", "zoned", "checksum", "xattr", "acltype", "aclinherit", "aclmode", "sync",
+            "logbias", "snapdir", "primarycache", "secondarycache", "redundant_metadata",
+            "dnodesize", "volmode", "copies", "casesensitivity", "normalization", "utf8only",
+            "version", "sharenfs", "sharesmb", "snapshot_limit", "filesystem_limit",
+            "special_small_blocks", "encryption", "encryptionroot", "keyformat", "keylocation",
+            "pbkdf2iters", "mlslabel", "context", "fscontext", "defcontext", "rootcontext",
+            "advanced", "tags", "custom_fields", "created", "last_updated",
         ]
         brief_fields = ["id", "url", "display", "name"]
 
@@ -72,7 +78,10 @@ class ZFSVolumeSerializer(NetBoxModelSerializer):
         model = ZFSVolume
         fields = [
             "id", "url", "display", "pool", "parent", "name", "volsize", "volblocksize",
-            "compression", "dedup", "encryption", "encryptionroot", "advanced",
-            "tags", "custom_fields", "created", "last_updated",
+            "volmode", "snapdev", "compression", "dedup", "checksum", "copies", "readonly",
+            "sync", "logbias", "primarycache", "secondarycache", "redundant_metadata",
+            "reservation", "refreservation", "encryption", "encryptionroot", "keyformat",
+            "keylocation", "pbkdf2iters", "mlslabel", "context", "fscontext", "defcontext",
+            "rootcontext", "advanced", "tags", "custom_fields", "created", "last_updated",
         ]
         brief_fields = ["id", "url", "display", "name", "volsize"]

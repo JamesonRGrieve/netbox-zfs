@@ -49,10 +49,17 @@ class ZFSDatasetTable(NetBoxTable):
     class Meta(NetBoxTable.Meta):
         model = ZFSDataset
         fields = (
-            "pk", "id", "pool", "parent", "name", "recordsize", "compression", "atime", "dedup",
-            "quota", "mountpoint", "canmount", "encryption", "tags", "created", "last_updated",
+            "pk", "id", "pool", "parent", "name", "recordsize", "compression", "checksum",
+            "copies", "atime", "relatime", "dedup", "sync", "logbias", "redundant_metadata",
+            "dnodesize", "primarycache", "secondarycache", "volmode", "exec", "setuid", "devices",
+            "readonly", "canmount", "mountpoint", "snapdir", "overlay", "nbmand", "vscan", "zoned",
+            "xattr", "acltype", "aclinherit", "aclmode", "casesensitivity", "normalization",
+            "utf8only", "version", "quota", "refquota", "reservation", "refreservation",
+            "snapshot_limit", "filesystem_limit", "special_small_blocks", "sharenfs", "sharesmb",
+            "encryption", "encryptionroot", "keyformat", "keylocation", "pbkdf2iters", "mlslabel",
+            "context", "fscontext", "defcontext", "rootcontext", "tags", "created", "last_updated",
         )
-        default_columns = ("name", "pool", "compression", "mountpoint", "quota")
+        default_columns = ("name", "pool", "compression", "mountpoint", "quota", "sharenfs")
 
 
 class ZFSVolumeTable(NetBoxTable):
@@ -64,7 +71,10 @@ class ZFSVolumeTable(NetBoxTable):
     class Meta(NetBoxTable.Meta):
         model = ZFSVolume
         fields = (
-            "pk", "id", "pool", "parent", "name", "volsize", "volblocksize", "compression",
-            "dedup", "encryption", "tags", "created", "last_updated",
+            "pk", "id", "pool", "parent", "name", "volsize", "volblocksize", "volmode", "snapdev",
+            "compression", "checksum", "copies", "dedup", "sync", "logbias", "redundant_metadata",
+            "primarycache", "secondarycache", "readonly", "reservation", "refreservation",
+            "encryption", "encryptionroot", "keyformat", "keylocation", "pbkdf2iters", "mlslabel",
+            "context", "fscontext", "defcontext", "rootcontext", "tags", "created", "last_updated",
         )
         default_columns = ("name", "pool", "volsize", "volblocksize", "compression")

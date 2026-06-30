@@ -1,5 +1,10 @@
 {% extends 'generic/object.html' %}
 {% load helpers %}
+{% comment %}
+A blank property means "inherited or default" — ZFS resolves the effective value at
+runtime from the dataset hierarchy (see ZFSDataset.effective()); only locally-set
+values are stored, so a placeholder here is meaningful, not missing data.
+{% endcomment %}
 {% block content %}
 <div class="row">
   <div class="col col-md-6">
@@ -14,18 +19,74 @@
       </table>
     </div>
     <div class="card">
-      <h2 class="card-header">Properties</h2>
+      <h2 class="card-header">Storage</h2>
       <table class="table table-hover attr-table">
         <tr><th scope="row">recordsize</th><td>{{ object.recordsize|placeholder }}</td></tr>
         <tr><th scope="row">compression</th><td>{{ object.get_compression_display|placeholder }}</td></tr>
-        <tr><th scope="row">atime</th><td>{{ object.get_atime_display|placeholder }}</td></tr>
+        <tr><th scope="row">checksum</th><td>{{ object.get_checksum_display|placeholder }}</td></tr>
+        <tr><th scope="row">copies</th><td>{{ object.copies|placeholder }}</td></tr>
         <tr><th scope="row">dedup</th><td>{{ object.get_dedup_display|placeholder }}</td></tr>
-        <tr><th scope="row">quota / refquota</th><td>{{ object.quota|placeholder }} / {{ object.refquota|placeholder }}</td></tr>
-        <tr><th scope="row">reservation</th><td>{{ object.reservation|placeholder }}</td></tr>
+        <tr><th scope="row">sync</th><td>{{ object.get_sync_display|placeholder }}</td></tr>
+        <tr><th scope="row">logbias</th><td>{{ object.get_logbias_display|placeholder }}</td></tr>
+        <tr><th scope="row">redundant_metadata</th><td>{{ object.get_redundant_metadata_display|placeholder }}</td></tr>
+        <tr><th scope="row">dnodesize</th><td>{{ object.get_dnodesize_display|placeholder }}</td></tr>
+        <tr><th scope="row">primarycache</th><td>{{ object.get_primarycache_display|placeholder }}</td></tr>
+        <tr><th scope="row">secondarycache</th><td>{{ object.get_secondarycache_display|placeholder }}</td></tr>
+        <tr><th scope="row">volmode</th><td>{{ object.get_volmode_display|placeholder }}</td></tr>
+        <tr><th scope="row">special_small_blocks</th><td>{{ object.special_small_blocks|placeholder }}</td></tr>
+      </table>
+    </div>
+    <div class="card">
+      <h2 class="card-header">Behaviour</h2>
+      <table class="table table-hover attr-table">
+        <tr><th scope="row">atime / relatime</th><td>{{ object.get_atime_display|placeholder }} / {{ object.get_relatime_display|placeholder }}</td></tr>
+        <tr><th scope="row">exec</th><td>{{ object.get_exec_display|placeholder }}</td></tr>
+        <tr><th scope="row">setuid</th><td>{{ object.get_setuid_display|placeholder }}</td></tr>
+        <tr><th scope="row">devices</th><td>{{ object.get_devices_display|placeholder }}</td></tr>
+        <tr><th scope="row">readonly</th><td>{{ object.get_readonly_display|placeholder }}</td></tr>
+        <tr><th scope="row">snapdir</th><td>{{ object.get_snapdir_display|placeholder }}</td></tr>
+        <tr><th scope="row">overlay</th><td>{{ object.get_overlay_display|placeholder }}</td></tr>
+        <tr><th scope="row">nbmand</th><td>{{ object.get_nbmand_display|placeholder }}</td></tr>
+        <tr><th scope="row">vscan</th><td>{{ object.get_vscan_display|placeholder }}</td></tr>
+        <tr><th scope="row">zoned</th><td>{{ object.get_zoned_display|placeholder }}</td></tr>
       </table>
     </div>
   </div>
   <div class="col col-md-6">
+    <div class="card">
+      <h2 class="card-header">Space</h2>
+      <table class="table table-hover attr-table">
+        <tr><th scope="row">quota / refquota</th><td>{{ object.quota|placeholder }} / {{ object.refquota|placeholder }}</td></tr>
+        <tr><th scope="row">reservation / refreservation</th><td>{{ object.reservation|placeholder }} / {{ object.refreservation|placeholder }}</td></tr>
+        <tr><th scope="row">snapshot_limit</th><td>{{ object.snapshot_limit|placeholder }}</td></tr>
+        <tr><th scope="row">filesystem_limit</th><td>{{ object.filesystem_limit|placeholder }}</td></tr>
+      </table>
+    </div>
+    <div class="card">
+      <h2 class="card-header">Sharing</h2>
+      <table class="table table-hover attr-table">
+        <tr><th scope="row">sharenfs</th><td>{{ object.sharenfs|placeholder }}</td></tr>
+        <tr><th scope="row">sharesmb</th><td>{{ object.sharesmb|placeholder }}</td></tr>
+      </table>
+    </div>
+    <div class="card">
+      <h2 class="card-header">ACL / xattr</h2>
+      <table class="table table-hover attr-table">
+        <tr><th scope="row">xattr</th><td>{{ object.get_xattr_display|placeholder }}</td></tr>
+        <tr><th scope="row">acltype</th><td>{{ object.get_acltype_display|placeholder }}</td></tr>
+        <tr><th scope="row">aclinherit</th><td>{{ object.get_aclinherit_display|placeholder }}</td></tr>
+        <tr><th scope="row">aclmode</th><td>{{ object.get_aclmode_display|placeholder }}</td></tr>
+      </table>
+    </div>
+    <div class="card">
+      <h2 class="card-header">Create-time (immutable)</h2>
+      <table class="table table-hover attr-table">
+        <tr><th scope="row">casesensitivity</th><td>{{ object.get_casesensitivity_display|placeholder }}</td></tr>
+        <tr><th scope="row">normalization</th><td>{{ object.get_normalization_display|placeholder }}</td></tr>
+        <tr><th scope="row">utf8only</th><td>{{ object.get_utf8only_display|placeholder }}</td></tr>
+        <tr><th scope="row">version</th><td>{{ object.version|placeholder }}</td></tr>
+      </table>
+    </div>
     <div class="card">
       <h2 class="card-header">Encryption</h2>
       <table class="table table-hover attr-table">
@@ -33,6 +94,17 @@
         <tr><th scope="row">encryptionroot</th><td>{{ object.encryptionroot|placeholder }}</td></tr>
         <tr><th scope="row">keyformat</th><td>{{ object.get_keyformat_display|placeholder }}</td></tr>
         <tr><th scope="row">keylocation</th><td>{{ object.keylocation|placeholder }}</td></tr>
+        <tr><th scope="row">pbkdf2iters</th><td>{{ object.pbkdf2iters|placeholder }}</td></tr>
+      </table>
+    </div>
+    <div class="card">
+      <h2 class="card-header">SELinux</h2>
+      <table class="table table-hover attr-table">
+        <tr><th scope="row">mlslabel</th><td>{{ object.mlslabel|placeholder }}</td></tr>
+        <tr><th scope="row">context</th><td>{{ object.context|placeholder }}</td></tr>
+        <tr><th scope="row">fscontext</th><td>{{ object.fscontext|placeholder }}</td></tr>
+        <tr><th scope="row">defcontext</th><td>{{ object.defcontext|placeholder }}</td></tr>
+        <tr><th scope="row">rootcontext</th><td>{{ object.rootcontext|placeholder }}</td></tr>
       </table>
     </div>
     {% include 'inc/panels/tags.html' %}

@@ -130,3 +130,88 @@ class ZFSKeyformatChoices(ChoiceSet):
     RAW = "raw"
     HEX = "hex"
     CHOICES = [(PASSPHRASE, "passphrase"), (RAW, "raw"), (HEX, "hex")]
+
+
+class ZFSChecksumChoices(ChoiceSet):
+    CHOICES = [
+        ("on", "on"), ("off", "off"), ("fletcher2", "fletcher2"), ("fletcher4", "fletcher4"),
+        ("sha256", "sha256"), ("noparity", "noparity"), ("sha512", "sha512"), ("skein", "skein"),
+        ("edonr", "edonr"), ("blake3", "blake3"),
+    ]
+
+
+class ZFSXattrChoices(ChoiceSet):
+    """`xattr` storage style. `sa` = system-attribute (preferred on Linux); `dir` = `on`."""
+
+    CHOICES = [("on", "on"), ("off", "off"), ("sa", "sa"), ("dir", "dir")]
+
+
+class ZFSAclTypeChoices(ChoiceSet):
+    CHOICES = [("off", "off"), ("nfsv4", "nfsv4"), ("posix", "posix")]
+
+
+class ZFSAclInheritChoices(ChoiceSet):
+    CHOICES = [
+        ("discard", "discard"), ("noallow", "noallow"), ("restricted", "restricted"),
+        ("passthrough", "passthrough"), ("passthrough-x", "passthrough-x"),
+    ]
+
+
+class ZFSAclModeChoices(ChoiceSet):
+    CHOICES = [
+        ("discard", "discard"), ("groupmask", "groupmask"), ("passthrough", "passthrough"),
+        ("restricted", "restricted"),
+    ]
+
+
+class ZFSSyncChoices(ChoiceSet):
+    CHOICES = [("standard", "standard"), ("always", "always"), ("disabled", "disabled")]
+
+
+class ZFSLogbiasChoices(ChoiceSet):
+    CHOICES = [("latency", "latency"), ("throughput", "throughput")]
+
+
+class ZFSSnapdirChoices(ChoiceSet):
+    """`snapdir` (filesystem) and `snapdev` (volume) share the hidden/visible tokens."""
+
+    CHOICES = [("hidden", "hidden"), ("visible", "visible")]
+
+
+class ZFSCacheChoices(ChoiceSet):
+    """`primarycache` / `secondarycache` (ARC / L2ARC) caching policy."""
+
+    CHOICES = [("all", "all"), ("none", "none"), ("metadata", "metadata")]
+
+
+class ZFSRedundantMetadataChoices(ChoiceSet):
+    CHOICES = [("all", "all"), ("most", "most"), ("some", "some"), ("none", "none")]
+
+
+class ZFSDnodeSizeChoices(ChoiceSet):
+    CHOICES = [
+        ("legacy", "legacy"), ("auto", "auto"), ("1k", "1k"), ("2k", "2k"),
+        ("4k", "4k"), ("8k", "8k"), ("16k", "16k"),
+    ]
+
+
+class ZFSCasesensitivityChoices(ChoiceSet):
+    """Create-time only; immutable afterwards."""
+
+    CHOICES = [("sensitive", "sensitive"), ("insensitive", "insensitive"), ("mixed", "mixed")]
+
+
+class ZFSNormalizationChoices(ChoiceSet):
+    """Create-time only; immutable afterwards."""
+
+    CHOICES = [
+        ("none", "none"), ("formC", "formC"), ("formD", "formD"),
+        ("formKC", "formKC"), ("formKD", "formKD"),
+    ]
+
+
+class ZFSVolModeChoices(ChoiceSet):
+    CHOICES = [
+        ("default", "default"), ("full", "full"), ("geom", "geom"),
+        ("dev", "dev"), ("none", "none"),
+    ]

@@ -92,7 +92,10 @@ class ZFSDatasetFilterSetTest(TestCase):
     def setUpTestData(cls):
         cls.pool = ZFSPool.objects.create(name="tank")
         pool2 = ZFSPool.objects.create(name="backup")
-        ZFSDataset.objects.create(pool=cls.pool, name="tank/db", mountpoint="/db")
+        ZFSDataset.objects.create(
+            pool=cls.pool, name="tank/db", mountpoint="/db", checksum="blake3",
+            sharenfs="rw=192.168.5.130/31",
+        )
         ZFSDataset.objects.create(pool=cls.pool, name="tank/vm")
         ZFSDataset.objects.create(pool=pool2, name="backup/snap")
 
@@ -103,6 +106,12 @@ class ZFSDatasetFilterSetTest(TestCase):
         self.assertEqual(ZFSDatasetFilterSet({"q": "tank/db"}, self.queryset).qs.count(), 1)
         self.assertEqual(ZFSDatasetFilterSet({"q": "/db"}, self.queryset).qs.count(), 1)
 
+    def test_search_matches_sharenfs(self):
+        self.assertEqual(ZFSDatasetFilterSet({"q": "192.168.5.130"}, self.queryset).qs.count(), 1)
+
+    def test_checksum_filter(self):
+        self.assertEqual(ZFSDatasetFilterSet({"checksum": "blake3"}, self.queryset).qs.count(), 1)
+
 
 class ZFSVolumeFilterSetTest(TestCase):
     queryset = ZFSVolume.objects.all()
@@ -111,7 +120,9 @@ class ZFSVolumeFilterSetTest(TestCase):
     def setUpTestData(cls):
         cls.pool = ZFSPool.objects.create(name="tank")
         pool2 = ZFSPool.objects.create(name="backup")
-        ZFSVolume.objects.create(pool=cls.pool, name="tank/vm/disk0", volsize="10G")
+        ZFSVolume.objects.create(
+            pool=cls.pool, name="tank/vm/disk0", volsize="10G", volmode="dev", checksum="sha256"
+        )
         ZFSVolume.objects.create(pool=pool2, name="backup/vm/disk0", volsize="10G")
 
     def test_pool_id(self):
@@ -119,3 +130,6 @@ class ZFSVolumeFilterSetTest(TestCase):
 
     def test_search(self):
         self.assertEqual(ZFSVolumeFilterSet({"q": "tank/vm"}, self.queryset).qs.count(), 1)
+
+    def test_volmode_filter(self):
+        self.assertEqual(ZFSVolumeFilterSet({"volmode": "dev"}, self.queryset).qs.count(), 1)

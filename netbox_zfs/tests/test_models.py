@@ -138,6 +138,66 @@ class ZFSDatasetModelTest(TestCase):
         parent.delete()
         self.assertFalse(ZFSDataset.objects.filter(pk=child_pk).exists())
 
+    def test_full_property_surface_round_trip(self):
+        """Every promoted settable property persists as its own column."""
+        d = ZFSDataset.objects.create(
+            pool=self.pool, name="tank/full", recordsize="1M", compression="zstd",
+            checksum="blake3", copies=2, atime="off", relatime="on", exec="off", setuid="off",
+            devices="off", readonly="on", nbmand="off", vscan="off", overlay="on", zoned="off",
+            xattr="sa", acltype="posix", aclinherit="passthrough", aclmode="passthrough",
+            sync="disabled", logbias="throughput", snapdir="visible", primarycache="metadata",
+            secondarycache="none", redundant_metadata="most", dnodesize="auto", volmode="dev",
+            casesensitivity="insensitive", normalization="formD", utf8only="on", version="5",
+            sharenfs="rw=192.168.5.130/31", sharesmb="off", quota="10G", refquota="8G",
+            reservation="1G", refreservation="512M", snapshot_limit="100", filesystem_limit="50",
+            special_small_blocks="32K", mlslabel="none", context="system_u:object_r:tmp_t",
+            fscontext="x", defcontext="y", rootcontext="z", pbkdf2iters=350000,
+        )
+        d.refresh_from_db()
+        self.assertEqual(d.checksum, "blake3")
+        self.assertEqual(d.copies, 2)
+        self.assertEqual(d.xattr, "sa")
+        self.assertEqual(d.sharenfs, "rw=192.168.5.130/31")
+        self.assertEqual(d.special_small_blocks, "32K")
+        self.assertEqual(d.pbkdf2iters, 350000)
+
+    def test_blank_means_inherited_or_default(self):
+        """An unset property is stored blank/NULL, not a guessed value."""
+        d = ZFSDataset.objects.create(pool=self.pool, name="tank/bare")
+        self.assertEqual(d.compression, "")
+        self.assertIsNone(d.copies)
+
+
+class ZFSDatasetInheritanceTest(TestCase):
+    """`effective()` resolves the runtime value from the dataset hierarchy."""
+
+    @classmethod
+    def setUpTestData(cls):
+        cls.pool = ZFSPool.objects.create(name="tank")
+        cls.root = ZFSDataset.objects.create(
+            pool=cls.pool, name="tank", compression="zstd", atime="off", quota="100G"
+        )
+        cls.mid = ZFSDataset.objects.create(pool=cls.pool, name="tank/db", parent=cls.root)
+        cls.leaf = ZFSDataset.objects.create(
+            pool=cls.pool, name="tank/db/pg", parent=cls.mid, compression="lz4"
+        )
+
+    def test_local_value_wins(self):
+        self.assertEqual(self.leaf.effective("compression"), "lz4")
+
+    def test_inherited_from_nearest_ancestor(self):
+        # mid sets nothing; both mid and leaf inherit atime=off from root.
+        self.assertEqual(self.mid.effective("atime"), "off")
+        self.assertEqual(self.leaf.effective("atime"), "off")
+
+    def test_unset_chain_returns_none_for_default(self):
+        self.assertIsNone(self.leaf.effective("checksum"))
+
+    def test_non_inheritable_is_local_only(self):
+        # quota does not inherit: set on root, but a child must not borrow it.
+        self.assertEqual(self.root.effective("quota"), "100G")
+        self.assertIsNone(self.mid.effective("quota"))
+
 
 class ZFSVolumeModelTest(TestCase):
     @classmethod
@@ -154,3 +214,21 @@ class ZFSVolumeModelTest(TestCase):
         ZFSVolume.objects.create(pool=self.pool, name="tank/vm/disk0", volsize="10G")
         with self.assertRaises(IntegrityError), transaction.atomic():
             ZFSVolume.objects.create(pool=self.pool, name="tank/vm/disk0", volsize="20G")
+
+    def test_full_property_surface_round_trip(self):
+        v = ZFSVolume.objects.create(
+            pool=self.pool, name="tank/vm/disk1", volsize="20G", volblocksize="16K",
+            volmode="dev", snapdev="visible", compression="zstd", checksum="sha256", copies=3,
+            dedup="off", readonly="on", sync="always", logbias="latency", primarycache="all",
+            secondarycache="metadata", redundant_metadata="some", reservation="1G",
+            refreservation="20G", encryption="aes-256-gcm", keyformat="passphrase",
+            keylocation="prompt", pbkdf2iters=500000, mlslabel="none", context="c",
+            fscontext="f", defcontext="d", rootcontext="r",
+        )
+        v.refresh_from_db()
+        self.assertEqual(v.volmode, "dev")
+        self.assertEqual(v.snapdev, "visible")
+        self.assertEqual(v.checksum, "sha256")
+        self.assertEqual(v.copies, 3)
+        self.assertEqual(v.refreservation, "20G")
+        self.assertEqual(v.pbkdf2iters, 500000)
