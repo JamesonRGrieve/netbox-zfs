@@ -42,6 +42,8 @@ so it **depends on `netbox-fs`** (which depends on `netbox-inventory`). Install/
 | `models.py` | `ZFSPool`, `ZFSVdev`, `ZFSVdevMember`, `ZFSDataset`, `ZFSVolume` |
 | `migrations/` | hand-authored; cross-plugin FK to `netbox_fs.Partition` |
 | `api/`, `filtersets.py`, `tables.py`, `forms.py`, `views.py`, `urls.py`, `navigation.py`, `templates/` | REST API + UI |
+| `models.py` (health) | `ZFSPoolHealth` / `ZFSVdevMemberHealth` (1:1 latest, observed) + `…Reading` history (one per owner + `captured_at`); saving a snapshot with `captured_at` records the reading |
+| `sync.py`, `jobs.py` | OpenObserve PromQL → health by pool GUID and member (serial → Disk → Partition number → member in that pool); `ZFSHealthSyncJob`, a daily `@system_job` registered in `ready()`; config from `NETBOX_ZFS_OPENOBSERVE_*` env |
 | `management/commands/backfill_zfs_from_inventory.py` | idempotent backfill from legacy Asset custom fields |
 
 ### Model notes
@@ -52,6 +54,9 @@ so it **depends on `netbox-fs`** (which depends on `netbox-inventory`). Install/
   per `(vdev, partition)`. A partition may back members in several vdevs (a hot spare shared across
   pools is the same partition in each pool's spare vdev); it may not appear twice in one vdev.
 - `ZFSDataset` is hierarchical (`parent`, CASCADE). `ZFSVolume.volsize` is required; zvols are leaves.
+- Observed health stays out of the intent models: it lives in the four health models (typed fields,
+  never `last_seen_state`). The collector encodes states as indexes into `ZFSHealthChoices.CODES` /
+  `ZFSScanStateChoices.CODES`: never reorder those tuples.
 
 ---
 

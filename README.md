@@ -83,3 +83,27 @@ python /opt/netbox/app/netbox/manage.py makemigrations netbox_zfs --check --dry-
 ## License
 
 AGPL-3.0-or-later.
+
+
+## Observed health
+
+Beside the designed topology, netbox-zfs keeps what the pools last reported:
+
+- **ZFSPoolHealth** (1:1 with a pool): health, size / allocated / free bytes, capacity and
+  fragmentation %, data errors, and the last scrub's state, end time and errors.
+- **ZFSVdevMemberHealth** (1:1 with a vdev member): state and read / write / checksum errors and slow
+  I/Os.
+- **…Reading** history for both: saving a snapshot with a `captured_at` records that reading (a new
+  capture time adds one, the same capture overwrites it).
+
+The **ZFS health sync from OpenObserve** system job (daily, on the rq worker) fills them from the
+`zfs_pool_metric`, `zfs_member_metric` and `zfs_captured_at_seconds` series that the hypervisors'
+collector (tofu-providers `modules/services/hv_alloy`, every 5 minutes) ships through Alloy. Pools
+match `pool_guid`; members match the member of that pool on partition N of the netbox-fs Disk whose
+Asset has the drive's serial. Pools and members that match nothing (or several) are logged as job
+warnings and never guessed. Configure it in the services' environment:
+`NETBOX_ZFS_OPENOBSERVE_URL`, `_ORGANIZATION` (default `default`), `_USERNAME`, `_PASSWORD`; unset,
+the job logs "Not configured" and does nothing.
+
+The end-to-end sync test needs a throwaway OpenObserve: set `NETBOX_ZFS_TEST_OPENOBSERVE_URL`,
+`_USERNAME` and `_PASSWORD`.

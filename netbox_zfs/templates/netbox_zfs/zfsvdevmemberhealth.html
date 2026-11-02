@@ -1,0 +1,21 @@
+{% extends 'generic/object.html' %}
+{% load helpers %}
+{% load render_table from django_tables2 %}
+{% block content %}
+<div class="row">
+  <div class="col col-md-5">
+    {% include 'netbox_zfs/inc/memberhealth.html' with title='Latest' %}
+  </div>
+  <div class="col col-md-7">
+<div class="card">
+  <h2 class="card-header">
+    History
+    <div class="card-actions">
+      <a href="{% url 'plugins:netbox_zfs:zfsvdevmemberhealthreading_list' %}?member_id={{ object.member_id }}" class="btn btn-ghost-primary btn-sm">All {{ readings_count }} readings</a>
+    </div>
+  </h2>
+  <div class="table-responsive">{% render_table readings_table 'inc/table.html' %}</div>
+</div>
+  </div>
+</div>
+{% endblock %}

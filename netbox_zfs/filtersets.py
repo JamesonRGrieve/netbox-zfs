@@ -4,8 +4,11 @@ from dcim.models import Device
 from django.db.models import Q
 from netbox.filtersets import NetBoxModelFilterSet
 from netbox_fs.models import Partition
-from .choices import VdevClassChoices, VdevRedundancyChoices
-from .models import ZFSDataset, ZFSPool, ZFSVdev, ZFSVdevMember, ZFSVolume
+from .choices import VdevClassChoices, VdevRedundancyChoices, ZFSHealthChoices, ZFSScanStateChoices
+from .models import (
+    ZFSDataset, ZFSPool, ZFSPoolHealth, ZFSPoolHealthReading, ZFSVdev, ZFSVdevMember,
+    ZFSVdevMemberHealth, ZFSVdevMemberHealthReading, ZFSVolume,
+)
 
 
 class ZFSPoolFilterSet(NetBoxModelFilterSet):
@@ -98,3 +101,73 @@ class ZFSVolumeFilterSet(NetBoxModelFilterSet):
 
     def search(self, queryset, name, value):
         return queryset.filter(Q(name__icontains=value))
+
+
+class ZFSPoolHealthFilterSet(NetBoxModelFilterSet):
+    pool_id = django_filters.ModelMultipleChoiceFilter(
+        field_name="pool", queryset=ZFSPool.objects.all(), label="Pool (ID)"
+    )
+    health = django_filters.MultipleChoiceFilter(choices=ZFSHealthChoices)
+    scrub_state = django_filters.MultipleChoiceFilter(choices=ZFSScanStateChoices)
+
+    class Meta:
+        model = ZFSPoolHealth
+        fields = ["id", "captured_at", "capacity_percent", "fragmentation_percent", "data_errors", "scrub_errors", "scrub_end"]
+
+    def search(self, queryset, name, value):
+        return queryset.filter(Q(pool__name__icontains=value) | Q(pool__pool_guid__icontains=value))
+
+
+class ZFSPoolHealthReadingFilterSet(NetBoxModelFilterSet):
+    pool_id = django_filters.ModelMultipleChoiceFilter(
+        field_name="pool", queryset=ZFSPool.objects.all(), label="Pool (ID)"
+    )
+    health = django_filters.MultipleChoiceFilter(choices=ZFSHealthChoices)
+    scrub_state = django_filters.MultipleChoiceFilter(choices=ZFSScanStateChoices)
+
+    class Meta:
+        model = ZFSPoolHealthReading
+        fields = ["id", "captured_at", "capacity_percent", "fragmentation_percent", "data_errors", "scrub_errors", "scrub_end"]
+
+    def search(self, queryset, name, value):
+        return queryset.filter(Q(pool__name__icontains=value) | Q(pool__pool_guid__icontains=value))
+
+
+class ZFSVdevMemberHealthFilterSet(NetBoxModelFilterSet):
+    member_id = django_filters.ModelMultipleChoiceFilter(
+        field_name="member", queryset=ZFSVdevMember.objects.all(), label="Vdev member (ID)"
+    )
+    pool_id = django_filters.ModelMultipleChoiceFilter(
+        field_name="member__vdev__pool", queryset=ZFSPool.objects.all(), label="Pool (ID)"
+    )
+    state = django_filters.MultipleChoiceFilter(choices=ZFSHealthChoices)
+
+    class Meta:
+        model = ZFSVdevMemberHealth
+        fields = ["id", "captured_at", "read_errors", "write_errors", "checksum_errors", "slow_ios"]
+
+    def search(self, queryset, name, value):
+        return queryset.filter(
+            Q(member__vdev__pool__name__icontains=value)
+            | Q(member__partition__disk__asset__serial__icontains=value)
+        )
+
+
+class ZFSVdevMemberHealthReadingFilterSet(NetBoxModelFilterSet):
+    member_id = django_filters.ModelMultipleChoiceFilter(
+        field_name="member", queryset=ZFSVdevMember.objects.all(), label="Vdev member (ID)"
+    )
+    pool_id = django_filters.ModelMultipleChoiceFilter(
+        field_name="member__vdev__pool", queryset=ZFSPool.objects.all(), label="Pool (ID)"
+    )
+    state = django_filters.MultipleChoiceFilter(choices=ZFSHealthChoices)
+
+    class Meta:
+        model = ZFSVdevMemberHealthReading
+        fields = ["id", "captured_at", "read_errors", "write_errors", "checksum_errors", "slow_ios"]
+
+    def search(self, queryset, name, value):
+        return queryset.filter(
+            Q(member__vdev__pool__name__icontains=value)
+            | Q(member__partition__disk__asset__serial__icontains=value)
+        )

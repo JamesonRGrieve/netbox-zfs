@@ -27,11 +27,17 @@ _volumes = PluginMenuItem(
     buttons=[PluginMenuButton("plugins:netbox_zfs:zfsvolume_add", "Add", "mdi mdi-plus-thick")],
 )
 
+_pool_health = PluginMenuItem(link="plugins:netbox_zfs:zfspoolhealth_list", link_text="Pool Health")
+_pool_health_readings = PluginMenuItem(link="plugins:netbox_zfs:zfspoolhealthreading_list", link_text="Pool Health History")
+_member_health = PluginMenuItem(link="plugins:netbox_zfs:zfsvdevmemberhealth_list", link_text="Member Health")
+_member_health_readings = PluginMenuItem(link="plugins:netbox_zfs:zfsvdevmemberhealthreading_list", link_text="Member Health History")
+
 menu = PluginMenu(
     label="ZFS",
     groups=(
         ("Topology", (_pools, _vdevs, _members)),
         ("Namespace", (_datasets, _volumes)),
+        ("Health", (_pool_health, _pool_health_readings, _member_health, _member_health_readings)),
     ),
     icon_class="mdi mdi-database",
 )

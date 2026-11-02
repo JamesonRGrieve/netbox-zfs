@@ -1,0 +1,14 @@
+{% load helpers %}
+<div class="card">
+  <h2 class="card-header">{{ title }}</h2>
+  <table class="table table-hover attr-table">
+    <tr><th scope="row">Vdev member</th><td>{{ object.member|linkify }}</td></tr>
+    <tr><th scope="row">Drive</th><td>{{ object.member.partition.disk|linkify }}</td></tr>
+    <tr><th scope="row">State</th><td>{% badge object.get_state_display bg_color=object.get_state_color %}</td></tr>
+    <tr><th scope="row">Read errors</th><td>{{ object.read_errors|placeholder }}</td></tr>
+    <tr><th scope="row">Write errors</th><td>{{ object.write_errors|placeholder }}</td></tr>
+    <tr><th scope="row">Checksum errors</th><td>{{ object.checksum_errors|placeholder }}</td></tr>
+    <tr><th scope="row">Slow I/Os</th><td>{{ object.slow_ios|placeholder }}</td></tr>
+    <tr><th scope="row">Captured at</th><td>{{ object.captured_at|placeholder }}</td></tr>
+  </table>
+</div>

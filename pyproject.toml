@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "netbox-zfs"
-version = "0.0.1"
+version = "0.1.0"
 description = "Native NetBox source of truth for ZFS pools, vdevs, datasets, and zvols"
 readme = "README.md"
 requires-python = ">=3.10"

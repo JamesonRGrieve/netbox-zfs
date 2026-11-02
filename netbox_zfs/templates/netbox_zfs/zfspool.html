@@ -32,6 +32,16 @@
         {% endfor %}
       </table>
     </div>
+    {% if object.health %}
+    <div class="card">
+      <h2 class="card-header">Health</h2>
+      <table class="table table-hover attr-table">
+        <tr><th scope="row">State</th><td>{% badge object.health.get_health_display bg_color=object.health.get_health_color %} {{ object.health|linkify:"captured_at" }}</td></tr>
+        <tr><th scope="row">Capacity</th><td>{{ object.health.capacity_percent|placeholder }} %</td></tr>
+        <tr><th scope="row">Data errors</th><td>{{ object.health.data_errors|placeholder }}</td></tr>
+      </table>
+    </div>
+    {% endif %}
     {% include 'inc/panels/tags.html' %}
     {% include 'inc/panels/custom_fields.html' %}
   </div>

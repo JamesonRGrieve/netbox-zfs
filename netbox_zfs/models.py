@@ -5,7 +5,7 @@ from django.db import models
 from django.urls import reverse
 from netbox.models import NetBoxModel
 from .choices import (
-    DeviceLinkTypeChoices, VdevClassChoices, VdevRedundancyChoices, ZFSAclInheritChoices,
+    DeviceLinkTypeChoices, ZFSHealthChoices, ZFSScanStateChoices, VdevClassChoices, VdevRedundancyChoices, ZFSAclInheritChoices,
     ZFSAclModeChoices, ZFSAclTypeChoices, ZFSCacheChoices, ZFSCanmountChoices,
     ZFSCasesensitivityChoices, ZFSChecksumChoices, ZFSCompressionChoices, ZFSDedupChoices,
     ZFSDnodeSizeChoices, ZFSEncryptionChoices, ZFSKeyformatChoices, ZFSLogbiasChoices,
@@ -335,3 +335,160 @@ class ZFSVolume(NetBoxModel):
 
     def get_absolute_url(self):
         return reverse("plugins:netbox_zfs:zfsvolume", args=[self.pk])
+
+
+# ---------------------------------------------------------------------------
+# Observed health: what `zpool status` / `zpool list` last reported, beside the designed topology
+# above. Each pool and vdev member has one latest snapshot (overwritten in place); every save with
+# a capture time also records that reading in its history.
+# ---------------------------------------------------------------------------
+
+
+class _HealthBase(NetBoxModel):
+    METRIC_FIELDS = ()
+
+    class Meta:
+        abstract = True
+
+    def metrics(self):
+        return {f: getattr(self, f) for f in self.METRIC_FIELDS}
+
+
+class PoolHealthMetrics(_HealthBase):
+    health = models.CharField(max_length=16, choices=ZFSHealthChoices, blank=True)
+    size_bytes = models.BigIntegerField(null=True, blank=True)
+    allocated_bytes = models.BigIntegerField(null=True, blank=True)
+    free_bytes = models.BigIntegerField(null=True, blank=True)
+    fragmentation_percent = models.PositiveSmallIntegerField(null=True, blank=True)
+    capacity_percent = models.PositiveSmallIntegerField(null=True, blank=True)
+    data_errors = models.BigIntegerField(
+        null=True, blank=True, help_text="Files with permanent errors (`zpool status` error count)."
+    )
+    scrub_state = models.CharField(max_length=16, choices=ZFSScanStateChoices, blank=True)
+    scrub_end = models.DateTimeField(null=True, blank=True, help_text="When the last scrub ended.")
+    scrub_errors = models.BigIntegerField(null=True, blank=True, help_text="Errors the last scrub found.")
+
+    METRIC_FIELDS = (
+        "health", "size_bytes", "allocated_bytes", "free_bytes", "fragmentation_percent",
+        "capacity_percent", "data_errors", "scrub_state", "scrub_end", "scrub_errors",
+    )
+
+    class Meta:
+        abstract = True
+
+    def get_health_color(self):
+        return ZFSHealthChoices.colors.get(self.health)
+
+
+class MemberHealthMetrics(_HealthBase):
+    state = models.CharField(max_length=16, choices=ZFSHealthChoices, blank=True)
+    read_errors = models.BigIntegerField(null=True, blank=True)
+    write_errors = models.BigIntegerField(null=True, blank=True)
+    checksum_errors = models.BigIntegerField(null=True, blank=True)
+    slow_ios = models.BigIntegerField(null=True, blank=True, help_text="I/Os slower than zio_slow_io_ms.")
+
+    METRIC_FIELDS = ("state", "read_errors", "write_errors", "checksum_errors", "slow_ios")
+
+    class Meta:
+        abstract = True
+
+    def get_state_color(self):
+        return ZFSHealthChoices.colors.get(self.state)
+
+
+class ZFSPoolHealth(PoolHealthMetrics):
+    """A pool's latest observed health."""
+
+    pool = models.OneToOneField(ZFSPool, on_delete=models.CASCADE, related_name="health")
+    captured_at = models.DateTimeField(null=True, blank=True, help_text="When `zpool status` was read.")
+
+    class Meta:
+        ordering = ["pool"]
+        verbose_name = "ZFS Pool Health"
+        verbose_name_plural = "ZFS Pool Health"
+
+    def __str__(self):
+        return f"Health: {self.pool}"
+
+    def get_absolute_url(self):
+        return reverse("plugins:netbox_zfs:zfspoolhealth", args=[self.pk])
+
+    def save(self, *args, **kwargs):
+        super().save(*args, **kwargs)
+        if self.captured_at is not None:
+            ZFSPoolHealthReading.objects.update_or_create(
+                pool_id=self.pool_id, captured_at=self.captured_at, defaults=self.metrics()
+            )
+
+    @property
+    def readings(self):
+        return ZFSPoolHealthReading.objects.filter(pool_id=self.pool_id).order_by("-captured_at")
+
+
+class ZFSPoolHealthReading(PoolHealthMetrics):
+    """One observed reading of a pool's health: the history behind ``ZFSPoolHealth``."""
+
+    pool = models.ForeignKey(ZFSPool, on_delete=models.CASCADE, related_name="health_readings")
+    captured_at = models.DateTimeField()
+
+    class Meta:
+        ordering = ["pool", "-captured_at"]
+        verbose_name = "ZFS Pool Health Reading"
+        constraints = [
+            models.UniqueConstraint(fields=["pool", "captured_at"], name="netbox_zfs_poolhealthreading_unique")
+        ]
+
+    def __str__(self):
+        return f"Health: {self.pool} @ {self.captured_at.isoformat()}"
+
+    def get_absolute_url(self):
+        return reverse("plugins:netbox_zfs:zfspoolhealthreading", args=[self.pk])
+
+
+class ZFSVdevMemberHealth(MemberHealthMetrics):
+    """A vdev member's latest observed state and error counters."""
+
+    member = models.OneToOneField(ZFSVdevMember, on_delete=models.CASCADE, related_name="health")
+    captured_at = models.DateTimeField(null=True, blank=True, help_text="When `zpool status` was read.")
+
+    class Meta:
+        ordering = ["member"]
+        verbose_name = "ZFS Vdev Member Health"
+        verbose_name_plural = "ZFS Vdev Member Health"
+
+    def __str__(self):
+        return f"Health: {self.member}"
+
+    def get_absolute_url(self):
+        return reverse("plugins:netbox_zfs:zfsvdevmemberhealth", args=[self.pk])
+
+    def save(self, *args, **kwargs):
+        super().save(*args, **kwargs)
+        if self.captured_at is not None:
+            ZFSVdevMemberHealthReading.objects.update_or_create(
+                member_id=self.member_id, captured_at=self.captured_at, defaults=self.metrics()
+            )
+
+    @property
+    def readings(self):
+        return ZFSVdevMemberHealthReading.objects.filter(member_id=self.member_id).order_by("-captured_at")
+
+
+class ZFSVdevMemberHealthReading(MemberHealthMetrics):
+    """One observed reading of a vdev member: the history behind ``ZFSVdevMemberHealth``."""
+
+    member = models.ForeignKey(ZFSVdevMember, on_delete=models.CASCADE, related_name="health_readings")
+    captured_at = models.DateTimeField()
+
+    class Meta:
+        ordering = ["member", "-captured_at"]
+        verbose_name = "ZFS Vdev Member Health Reading"
+        constraints = [
+            models.UniqueConstraint(fields=["member", "captured_at"], name="netbox_zfs_memberhealthreading_unique")
+        ]
+
+    def __str__(self):
+        return f"Health: {self.member} @ {self.captured_at.isoformat()}"
+
+    def get_absolute_url(self):
+        return reverse("plugins:netbox_zfs:zfsvdevmemberhealthreading", args=[self.pk])

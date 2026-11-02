@@ -3,7 +3,10 @@ from dcim.api.serializers import DeviceSerializer
 from netbox.api.serializers import NetBoxModelSerializer
 from netbox_fs.api.serializers import PartitionSerializer
 from rest_framework import serializers
-from ..models import ZFSDataset, ZFSPool, ZFSVdev, ZFSVdevMember, ZFSVolume
+from ..models import (
+    ZFSDataset, ZFSPool, ZFSPoolHealth, ZFSPoolHealthReading, ZFSVdev, ZFSVdevMember,
+    ZFSVdevMemberHealth, ZFSVdevMemberHealthReading, ZFSVolume,
+)
 
 
 class ZFSPoolSerializer(NetBoxModelSerializer):
@@ -85,3 +88,55 @@ class ZFSVolumeSerializer(NetBoxModelSerializer):
             "rootcontext", "advanced", "tags", "custom_fields", "created", "last_updated",
         ]
         brief_fields = ["id", "url", "display", "name", "volsize"]
+
+
+class ZFSPoolHealthSerializer(NetBoxModelSerializer):
+    url = serializers.HyperlinkedIdentityField(view_name="plugins-api:netbox_zfs-api:zfspoolhealth-detail")
+    pool = ZFSPoolSerializer(nested=True)
+
+    class Meta:
+        model = ZFSPoolHealth
+        fields = [
+            "id", "url", "display", "pool", "captured_at", "health", "size_bytes", "allocated_bytes", "free_bytes", "fragmentation_percent", "capacity_percent", "data_errors", "scrub_state", "scrub_end", "scrub_errors",
+            "tags", "custom_fields", "created", "last_updated",
+        ]
+        brief_fields = ["id", "url", "display", "pool", "captured_at", "health"]
+
+
+class ZFSPoolHealthReadingSerializer(NetBoxModelSerializer):
+    url = serializers.HyperlinkedIdentityField(view_name="plugins-api:netbox_zfs-api:zfspoolhealthreading-detail")
+    pool = ZFSPoolSerializer(nested=True)
+
+    class Meta:
+        model = ZFSPoolHealthReading
+        fields = [
+            "id", "url", "display", "pool", "captured_at", "health", "size_bytes", "allocated_bytes", "free_bytes", "fragmentation_percent", "capacity_percent", "data_errors", "scrub_state", "scrub_end", "scrub_errors",
+            "tags", "custom_fields", "created", "last_updated",
+        ]
+        brief_fields = ["id", "url", "display", "pool", "captured_at", "health"]
+
+
+class ZFSVdevMemberHealthSerializer(NetBoxModelSerializer):
+    url = serializers.HyperlinkedIdentityField(view_name="plugins-api:netbox_zfs-api:zfsvdevmemberhealth-detail")
+    member = ZFSVdevMemberSerializer(nested=True)
+
+    class Meta:
+        model = ZFSVdevMemberHealth
+        fields = [
+            "id", "url", "display", "member", "captured_at", "state", "read_errors", "write_errors", "checksum_errors", "slow_ios",
+            "tags", "custom_fields", "created", "last_updated",
+        ]
+        brief_fields = ["id", "url", "display", "member", "captured_at", "state"]
+
+
+class ZFSVdevMemberHealthReadingSerializer(NetBoxModelSerializer):
+    url = serializers.HyperlinkedIdentityField(view_name="plugins-api:netbox_zfs-api:zfsvdevmemberhealthreading-detail")
+    member = ZFSVdevMemberSerializer(nested=True)
+
+    class Meta:
+        model = ZFSVdevMemberHealthReading
+        fields = [
+            "id", "url", "display", "member", "captured_at", "state", "read_errors", "write_errors", "checksum_errors", "slow_ios",
+            "tags", "custom_fields", "created", "last_updated",
+        ]
+        brief_fields = ["id", "url", "display", "member", "captured_at", "state"]

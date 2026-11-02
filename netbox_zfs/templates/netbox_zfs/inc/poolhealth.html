@@ -1,0 +1,16 @@
+{% load helpers %}
+<div class="card">
+  <h2 class="card-header">{{ title }}</h2>
+  <table class="table table-hover attr-table">
+    <tr><th scope="row">Pool</th><td>{{ object.pool|linkify }}</td></tr>
+    <tr><th scope="row">Health</th><td>{% badge object.get_health_display bg_color=object.get_health_color %}</td></tr>
+    <tr><th scope="row">Size</th><td>{{ object.size_bytes|filesizeformat }}</td></tr>
+    <tr><th scope="row">Allocated</th><td>{{ object.allocated_bytes|filesizeformat }} ({{ object.capacity_percent|placeholder }} %)</td></tr>
+    <tr><th scope="row">Free</th><td>{{ object.free_bytes|filesizeformat }}</td></tr>
+    <tr><th scope="row">Fragmentation</th><td>{% if object.fragmentation_percent is not None %}{{ object.fragmentation_percent }} %{% else %}{{ ''|placeholder }}{% endif %}</td></tr>
+    <tr><th scope="row">Data errors</th><td>{{ object.data_errors|placeholder }}</td></tr>
+    <tr><th scope="row">Last scrub</th><td>{{ object.get_scrub_state_display|placeholder }}{% if object.scrub_end %}, ended {{ object.scrub_end }}{% endif %}</td></tr>
+    <tr><th scope="row">Scrub errors</th><td>{{ object.scrub_errors|placeholder }}</td></tr>
+    <tr><th scope="row">Captured at</th><td>{{ object.captured_at|placeholder }}</td></tr>
+  </table>
+</div>

@@ -7,8 +7,11 @@ from utilities.forms.fields import (
     DynamicModelChoiceField, DynamicModelMultipleChoiceField, TagFilterField,
 )
 from utilities.forms.rendering import FieldSet
-from .choices import VdevClassChoices, VdevRedundancyChoices
-from .models import ZFSDataset, ZFSPool, ZFSVdev, ZFSVdevMember, ZFSVolume
+from .choices import VdevClassChoices, VdevRedundancyChoices, ZFSHealthChoices
+from .models import (
+    ZFSDataset, ZFSPool, ZFSPoolHealth, ZFSPoolHealthReading, ZFSVdev, ZFSVdevMember,
+    ZFSVdevMemberHealth, ZFSVdevMemberHealthReading, ZFSVolume,
+)
 
 
 class ZFSPoolForm(NetBoxModelForm):
@@ -155,3 +158,71 @@ class ZFSVolumeFilterForm(NetBoxModelFilterSetForm):
     pool_id = DynamicModelMultipleChoiceField(queryset=ZFSPool.objects.all(), required=False, label="Pool")
     parent_id = DynamicModelMultipleChoiceField(queryset=ZFSDataset.objects.all(), required=False, label="Parent")
     tag = TagFilterField(ZFSVolume)
+
+
+class ZFSPoolHealthForm(NetBoxModelForm):
+    pool = DynamicModelChoiceField(queryset=ZFSPool.objects.all())
+
+    fieldsets = (FieldSet("pool", "captured_at", "health", "size_bytes", "allocated_bytes", "free_bytes", "fragmentation_percent", "capacity_percent", "data_errors", "scrub_state", "scrub_end", "scrub_errors", name="Health"),)
+
+    class Meta:
+        model = ZFSPoolHealth
+        fields = ["pool", "captured_at", "health", "size_bytes", "allocated_bytes", "free_bytes", "fragmentation_percent", "capacity_percent", "data_errors", "scrub_state", "scrub_end", "scrub_errors", "tags"]
+
+
+class ZFSPoolHealthFilterForm(NetBoxModelFilterSetForm):
+    model = ZFSPoolHealth
+    pool_id = DynamicModelMultipleChoiceField(queryset=ZFSPool.objects.all(), required=False, label="Pool")
+    health = forms.MultipleChoiceField(choices=ZFSHealthChoices, required=False)
+    tag = TagFilterField(ZFSPoolHealth)
+
+
+class ZFSPoolHealthReadingForm(NetBoxModelForm):
+    pool = DynamicModelChoiceField(queryset=ZFSPool.objects.all())
+
+    fieldsets = (FieldSet("pool", "captured_at", "health", "size_bytes", "allocated_bytes", "free_bytes", "fragmentation_percent", "capacity_percent", "data_errors", "scrub_state", "scrub_end", "scrub_errors", name="Health"),)
+
+    class Meta:
+        model = ZFSPoolHealthReading
+        fields = ["pool", "captured_at", "health", "size_bytes", "allocated_bytes", "free_bytes", "fragmentation_percent", "capacity_percent", "data_errors", "scrub_state", "scrub_end", "scrub_errors", "tags"]
+
+
+class ZFSPoolHealthReadingFilterForm(NetBoxModelFilterSetForm):
+    model = ZFSPoolHealthReading
+    pool_id = DynamicModelMultipleChoiceField(queryset=ZFSPool.objects.all(), required=False, label="Pool")
+    health = forms.MultipleChoiceField(choices=ZFSHealthChoices, required=False)
+    tag = TagFilterField(ZFSPoolHealthReading)
+
+
+class ZFSVdevMemberHealthForm(NetBoxModelForm):
+    member = DynamicModelChoiceField(queryset=ZFSVdevMember.objects.all())
+
+    fieldsets = (FieldSet("member", "captured_at", "state", "read_errors", "write_errors", "checksum_errors", "slow_ios", name="Health"),)
+
+    class Meta:
+        model = ZFSVdevMemberHealth
+        fields = ["member", "captured_at", "state", "read_errors", "write_errors", "checksum_errors", "slow_ios", "tags"]
+
+
+class ZFSVdevMemberHealthFilterForm(NetBoxModelFilterSetForm):
+    model = ZFSVdevMemberHealth
+    member_id = DynamicModelMultipleChoiceField(queryset=ZFSVdevMember.objects.all(), required=False, label="Vdev member")
+    state = forms.MultipleChoiceField(choices=ZFSHealthChoices, required=False)
+    tag = TagFilterField(ZFSVdevMemberHealth)
+
+
+class ZFSVdevMemberHealthReadingForm(NetBoxModelForm):
+    member = DynamicModelChoiceField(queryset=ZFSVdevMember.objects.all())
+
+    fieldsets = (FieldSet("member", "captured_at", "state", "read_errors", "write_errors", "checksum_errors", "slow_ios", name="Health"),)
+
+    class Meta:
+        model = ZFSVdevMemberHealthReading
+        fields = ["member", "captured_at", "state", "read_errors", "write_errors", "checksum_errors", "slow_ios", "tags"]
+
+
+class ZFSVdevMemberHealthReadingFilterForm(NetBoxModelFilterSetForm):
+    model = ZFSVdevMemberHealthReading
+    member_id = DynamicModelMultipleChoiceField(queryset=ZFSVdevMember.objects.all(), required=False, label="Vdev member")
+    state = forms.MultipleChoiceField(choices=ZFSHealthChoices, required=False)
+    tag = TagFilterField(ZFSVdevMemberHealthReading)

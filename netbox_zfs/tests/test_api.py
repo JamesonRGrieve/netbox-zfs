@@ -8,17 +8,24 @@ from utilities.testing import APIViewTestCases
 from netbox_zfs.models import ZFSDataset, ZFSPool, ZFSVdev, ZFSVdevMember, ZFSVolume
 
 
-class _CRUD(
+class _PluginAPI:
+    """Plugin API views live under the `plugins-api:` namespace. A plain mixin, not a TestCase,
+    so the runner never collects it as a model-less test class."""
+
+    view_namespace = "plugins-api:netbox_zfs"
+
+
+_CRUD = (
+    _PluginAPI,
     APIViewTestCases.GetObjectViewTestCase,
     APIViewTestCases.ListObjectsViewTestCase,
     APIViewTestCases.CreateObjectViewTestCase,
     APIViewTestCases.UpdateObjectViewTestCase,
     APIViewTestCases.DeleteObjectViewTestCase,
-):
-    pass
+)
 
 
-class ZFSPoolAPITest(_CRUD):
+class ZFSPoolAPITest(*_CRUD):
     model = ZFSPool
     brief_fields = ["display", "id", "name", "pool_guid", "url"]
     bulk_update_data = {"comment": "bulk"}
@@ -33,7 +40,7 @@ class ZFSPoolAPITest(_CRUD):
         ]
 
 
-class ZFSVdevAPITest(_CRUD):
+class ZFSVdevAPITest(*_CRUD):
     model = ZFSVdev
     brief_fields = ["display", "id", "pool", "redundancy", "url", "vdev_class"]
     bulk_update_data = {"redundancy": "mirror"}
@@ -53,7 +60,7 @@ class ZFSVdevAPITest(_CRUD):
         ]
 
 
-class ZFSVdevMemberAPITest(_CRUD):
+class ZFSVdevMemberAPITest(*_CRUD):
     model = ZFSVdevMember
     brief_fields = ["display", "id", "partition", "url", "vdev"]
     bulk_update_data = {"whole_disk": True}
@@ -85,7 +92,7 @@ class ZFSVdevMemberAPITest(_CRUD):
         ]
 
 
-class ZFSDatasetAPITest(_CRUD):
+class ZFSDatasetAPITest(*_CRUD):
     model = ZFSDataset
     brief_fields = ["display", "id", "name", "url"]
     bulk_update_data = {"compression": "lz4"}
@@ -110,7 +117,7 @@ class ZFSDatasetAPITest(_CRUD):
         ]
 
 
-class ZFSVolumeAPITest(_CRUD):
+class ZFSVolumeAPITest(*_CRUD):
     model = ZFSVolume
     brief_fields = ["display", "id", "name", "url", "volsize"]
     bulk_update_data = {"compression": "zstd"}

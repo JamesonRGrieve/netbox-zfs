@@ -215,3 +215,47 @@ class ZFSVolModeChoices(ChoiceSet):
         ("default", "default"), ("full", "full"), ("geom", "geom"),
         ("dev", "dev"), ("none", "none"),
     ]
+
+
+class ZFSHealthChoices(ChoiceSet):
+    """`zpool status` state of a pool or a vdev member (AVAIL/INUSE apply to spares). The
+    collector encodes these as their index in ``CODES``; keep the order stable."""
+
+    ONLINE = "ONLINE"
+    DEGRADED = "DEGRADED"
+    FAULTED = "FAULTED"
+    OFFLINE = "OFFLINE"
+    UNAVAIL = "UNAVAIL"
+    REMOVED = "REMOVED"
+    SUSPENDED = "SUSPENDED"
+    AVAIL = "AVAIL"
+    INUSE = "INUSE"
+    CODES = (ONLINE, DEGRADED, FAULTED, OFFLINE, UNAVAIL, REMOVED, SUSPENDED, AVAIL, INUSE)
+    CHOICES = [
+        (ONLINE, "Online", "green"),
+        (DEGRADED, "Degraded", "orange"),
+        (FAULTED, "Faulted", "red"),
+        (OFFLINE, "Offline", "gray"),
+        (UNAVAIL, "Unavailable", "red"),
+        (REMOVED, "Removed", "red"),
+        (SUSPENDED, "Suspended", "red"),
+        (AVAIL, "Available (spare)", "blue"),
+        (INUSE, "In use (spare)", "orange"),
+    ]
+
+
+class ZFSScanStateChoices(ChoiceSet):
+    """State of the pool's last scrub or resilver (`zpool status` scan_stats.state), indexed like
+    ``ZFSHealthChoices.CODES``."""
+
+    NONE = "NONE"
+    SCANNING = "SCANNING"
+    FINISHED = "FINISHED"
+    CANCELED = "CANCELED"
+    CODES = (NONE, SCANNING, FINISHED, CANCELED)
+    CHOICES = [
+        (NONE, "Never", "gray"),
+        (SCANNING, "In progress", "blue"),
+        (FINISHED, "Finished", "green"),
+        (CANCELED, "Canceled", "orange"),
+    ]
